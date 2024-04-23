@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Report Downloads</title>
+</head>
+<body>
+    <h1>Report Downloads</h1>
+    <div>
+        <h2>Registration Reports</h2>
+        <ul>
+            {% for file in registration_files %}
+            <li>{{ file }}</li>
+            {% endfor %}
+        </ul>
+        <form method="post" action=".">
+            {% csrf_token %}
+            <button type="submit" name="generate_registration">Generate New Registration Report</button>
+        </form>
+    </div>
+    <div>
+        <h2>Enrollment Reports</h2>
+        <ul>
+            {% for file in enrollment_files %}
+            <li>{{ file }}</li>
+            {% endfor %}
+        </ul>
+        <form method="post" action=".">
+            {% csrf_token %}
+            <button type="submit" name="generate_enrollment">Generate New Enrollment Report</button>
+        </form>
+    </div>
+</body>
+</html>
