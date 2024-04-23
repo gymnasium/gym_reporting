@@ -4,11 +4,13 @@ import datetime
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
+from django.http import StreamingHttpResponse
+from django.db.models import OuterRef, Subquery, F
+
 from student.models import CourseEnrollment
 from lms.djangoapps.certificates.models import GeneratedCertificate
 from openedx.core.djangoapps.content.course_overviews.models import CourseOverview
 from openedx.core.djangoapps.user_api.accounts.image_helpers import get_profile_image_urls_for_user
-from django.db.models import OuterRef, Subquery, F
 from google.cloud import storage
 
 MARKET_MAPPING = {
@@ -95,6 +97,16 @@ def list_files(bucket_name, prefix, json_key_path, max_results=15):
     # List blobs in the specified bucket with the given prefix
     blobs = bucket.list_blobs(prefix=prefix, max_results=max_results)
     return [blob.name for blob in blobs]
+
+def download_gcs_file(bucket_name, blob_name, json_key_path):
+    """Streams a file from GCS to the user."""
+    storage_client = storage.Client.from_service_account_json(json_key_path)
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(blob_name)
+    
+    response = StreamingHttpResponse(blob.download_as_string())
+    response['Content-Disposition'] = 'attachment; filename="{}"'.format(os.path.basename(blob_name))
+    return response
 
 def generate_registration_report_csv():
     users = User.objects.select_related('profile', 'extrainfo').all()
@@ -205,5 +217,11 @@ def reporting_download(request):
             generate_registration_report_csv()
         elif 'generate_enrollment' in request.POST:
             generate_enrollment_report_csv()
+
+    if request.method == 'GET' and 'download' in request.GET:
+        blob_name = request.GET.get('download')
+        # Ensure blob_name is sanitized and validated to prevent directory traversal attacks
+        return download_gcs_file(bucket_name, blob_name, json_key_path)
+
     
     return render(request, 'reporting_download.html', context)

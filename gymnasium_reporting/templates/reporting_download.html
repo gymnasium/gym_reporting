@@ -1,3 +1,5 @@
+{% load gymnasium_reporting_extras %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,7 +12,7 @@
         <h2>Registration Reports</h2>
         <ul>
             {% for file in registration_files %}
-            <li>{{ file }}</li>
+            <li><a href="https://storage.cloud.google.com/{{ bucket_name }}/{{ file }}" download>{{ file|basename }}</a></li>
             {% endfor %}
         </ul>
         <form method="post" action=".">
@@ -22,7 +24,7 @@
         <h2>Enrollment Reports</h2>
         <ul>
             {% for file in enrollment_files %}
-            <li>{{ file }}</li>
+            <li><a href="https://storage.cloud.google.com/{{ bucket_name }}/{{ file }}" download>{{ file|basename }}</a></li>
             {% endfor %}
         </ul>
         <form method="post" action=".">
