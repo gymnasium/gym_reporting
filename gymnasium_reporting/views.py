@@ -1,4 +1,5 @@
 import io
+import re
 import csv
 import datetime
 from django.shortcuts import render, redirect
@@ -6,6 +7,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.http import StreamingHttpResponse
 from django.db.models import OuterRef, Subquery, F
+from django.core.exceptions import SuspiciousOperation
 
 from student.models import CourseEnrollment
 from lms.djangoapps.certificates.models import GeneratedCertificate
@@ -192,6 +194,10 @@ def generate_enrollment_report_csv():
     upload_to_gcs(bucket_name, destination_blob_name, content, json_key_path)
     print('Enrollment report generated and uploaded.')
 
+def is_safe_path(blob_name, path_prefix):
+    # Check if the path is safe to use
+    return blob_name.startswith(path_prefix) and '..' not in blob_name and '\x00' not in blob_name
+
 @login_required
 def reporting_download(request):
     if not request.user.is_superuser:
@@ -221,7 +227,12 @@ def reporting_download(request):
 
     if request.method == 'GET' and 'download' in request.GET:
         blob_name = request.GET.get('download')
-        # Ensure blob_name is sanitized and validated to prevent directory traversal attacks
+        
+        # Ensure the file name is safe and matches the expected pattern
+        expected_pattern = r'^reports/(registrations|enrollments)/[a-zA-Z0-9_\-]+\.csv$'
+        if not re.match(expected_pattern, blob_name) or not is_safe_path(blob_name, 'reports/'):
+            raise SuspiciousOperation('Invalid file path')
+
         return download_gcs_file(bucket_name, blob_name, json_key_path)
 
     
