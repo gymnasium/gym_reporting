@@ -96,6 +96,49 @@
         .files-container {
             padding: 10px;
         }
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgb(0,0,0); /* Fallback color */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto; /* 15% from the top and centered */
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%; /* Could be more or less, depending on screen size */
+            text-align: center;
+        }
+
+        .progress-bar {
+            background-color: #f3f3f3;
+            border-radius: 5px;
+            padding: 3px;
+        }
+
+        .progress-bar-inner {
+            height: 20px;
+            background-color: #ff5f14;
+            border-radius: 5px;
+            width: 100%; /* Adjust with JavaScript to show progress */
+            animation: loading 2s infinite;
+        }
+
+        @keyframes loading {
+            from { width: 0%; }
+            to { width: 100%; }
+        }
+        .modal-description {
+            text-align: left;
+        }
     </style>
 </head>
 <body>
@@ -155,7 +198,7 @@
         </div>
     </header>
     <div class="container report-container">
-        <h1>Report Center </h1>
+        <h1>Report Center</h1>
         <p class="description">Access reports for user registrations and course enrollments. Generate fresh reports or download the existing ones.</p>
         <div class="row">
             <div class="column">
@@ -192,5 +235,24 @@
             </div>
         </div>
     </div>
+    <div id="loadingModal" class="modal">
+        <div class="modal-content">
+            <h2>Report Generation in Progress</h2>
+            <p class="modal-description">Please wait while your report is being prepared. This may take a few moments. The page will automatically refresh once the report is ready and will be added to the bottom of the list.</p>
+            <div class="">
+                <div class="progress-bar-inner"></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function(){
+            const forms = document.querySelectorAll("form");
+            forms.forEach(function(form) {
+                form.addEventListener("submit", function() {
+                    document.getElementById('loadingModal').style.display = 'block';
+                });
+            });
+        });
+        </script>
 </body>
 </html>
