@@ -207,6 +207,7 @@ def reporting_download(request):
     enrollment_files = list_files(bucket_name, enrollments_prefix, json_key_path)
 
     context = {
+        'bucket_name': bucket_name,
         'registration_files': registration_files,
         'enrollment_files': enrollment_files,
     }
