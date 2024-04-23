@@ -74,6 +74,19 @@
         .button-container {
             text-align: center;
         }
+        .row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .column {
+            flex: 0 0 48%; /* Use about 48% to give some space between columns */
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
     </style>
 </head>
 <body class="container">
@@ -91,37 +104,40 @@
           </ul>
         </div>
     </nav>
-    <h1>Report Downloads</h1>
-    <div>
-        <h2>Registration Reports</h2>
-        <ul>
-            {% for file in registration_files %}
-                <li>
-                    <a href="https://storage.cloud.google.com/{{ bucket_name }}/{{ file }}" download>{{ file|basename }}</a>
-                </li>
-            {% endfor %}
-        </ul>
-        <div class="button-container">
-            <form method="post" action="{% url 'gymnasium_reporting:reporting_download' %}">
-                {% csrf_token %}
-                <button type="submit" name="generate_registration">Generate New Registration Report</button>
-            </form>
+    <h1>Report Center </h1>
+    <p class="description">Access reports for user registrations and course enrollments. Generate fresh reports or download the existing reports.</p>
+    <div class="row">
+        <div class="column">
+            <h2>Registrations Report</h2>
+            <ul>
+                {% for file in registration_files %}
+                    <li>
+                        <a href="https://storage.cloud.google.com/{{ bucket_name }}/{{ file }}" download>{{ file|basename }}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+            <div class="button-container">
+                <form method="post" action="{% url 'gymnasium_reporting:reporting_download' %}">
+                    {% csrf_token %}
+                    <button type="submit" name="generate_registration">Generate Registrations Report</button>
+                </form>
+            </div>
         </div>
-    </div>
-    <div>
-        <h2>Enrollment Reports</h2>
-        <ul>
-            {% for file in enrollment_files %}
-                <li>
-                    <a href="https://storage.cloud.google.com/{{ bucket_name }}/{{ file }}" download>{{ file|basename }}</a>
-                </li>
-            {% endfor %}
-        </ul>
-        <div class="button-container">
-            <form method="post" action="{% url 'gymnasium_reporting:reporting_download' %}">
-                {% csrf_token %}
-                <button type="submit" name="generate_enrollment">Generate New Enrollment Report</button>
-            </form>
+        <div class="column">
+            <h2>Enrollments Report</h2>
+            <ul>
+                {% for file in enrollment_files %}
+                    <li>
+                        <a href="https://storage.cloud.google.com/{{ bucket_name }}/{{ file }}" download>{{ file|basename }}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+            <div class="button-container">
+                <form method="post" action="{% url 'gymnasium_reporting:reporting_download' %}">
+                    {% csrf_token %}
+                    <button type="submit" name="generate_enrollment">Generate Enrollments Report</button>
+                </form>
+            </div>
         </div>
     </div>
 </body>
