@@ -87,7 +87,7 @@
             text-transform: uppercase;
             transition: background-color 0.3s ease;
         }
-        .button:hover {
+        .generate-report-btn:hover {
             background-color: #555 !important;
         }
         .report-container {
@@ -170,7 +170,7 @@
                 <div class="button-container">
                     <form method="post" action="{% url 'gymnasium_reporting:reporting_download' %}">
                         {% csrf_token %}
-                        <button type="submit" name="generate_registration">Generate Registrations Report</button>
+                        <button class="generate-report-btn" type="submit" name="generate_registration">Generate Registrations Report</button>
                     </form>
                 </div>
             </div>
@@ -186,7 +186,7 @@
                 <div class="button-container">
                     <form method="post" action="{% url 'gymnasium_reporting:reporting_download' %}">
                         {% csrf_token %}
-                        <button type="submit" name="generate_enrollment">Generate Enrollments Report</button>
+                        <button class="generate-report-btn" type="submit" name="generate_enrollment">Generate Enrollments Report</button>
                     </form>
                 </div>
             </div>
