@@ -15,7 +15,7 @@
             <li><a href="https://storage.cloud.google.com/{{ bucket_name }}/{{ file }}" download>{{ file|basename }}</a></li>
             {% endfor %}
         </ul>
-        <form method="post" action=".">
+        <form method="post" action="{% url 'gymnasium_reporting:reporting_download' %}">
             {% csrf_token %}
             <button type="submit" name="generate_registration">Generate New Registration Report</button>
         </form>
@@ -27,7 +27,7 @@
             <li><a href="https://storage.cloud.google.com/{{ bucket_name }}/{{ file }}" download>{{ file|basename }}</a></li>
             {% endfor %}
         </ul>
-        <form method="post" action=".">
+        <form method="post" action="{% url 'gymnasium_reporting:reporting_download' %}">
             {% csrf_token %}
             <button type="submit" name="generate_enrollment">Generate New Enrollment Report</button>
         </form>
