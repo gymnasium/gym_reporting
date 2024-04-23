@@ -2,11 +2,13 @@ import io
 import re
 import csv
 import datetime
+from django.urls import reverse
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
-from django.http import StreamingHttpResponse
+from django.http import StreamingHttpResponse, HttpResponseRedirect
 from django.db.models import OuterRef, Subquery, F
+from django.core.exceptions import SuspiciousOperation
 from django.core.exceptions import SuspiciousOperation
 
 from student.models import CourseEnrollment
@@ -218,22 +220,25 @@ def reporting_download(request):
         'enrollment_files': enrollment_files,
     }
 
-    # Generate reports if the respective button is clicked
+    # Handle POST request: Generate reports
     if request.method == 'POST':
         if 'generate_registration' in request.POST:
             generate_registration_report_csv()
+            # Redirect to avoid re-posting on refresh
+            return HttpResponseRedirect(reverse('gymnasium_reporting:reporting_download'))
         elif 'generate_enrollment' in request.POST:
             generate_enrollment_report_csv()
+            # Redirect to avoid re-posting on refresh
+            return HttpResponseRedirect(reverse('gymnasium_reporting:reporting_download'))
 
+    # Handle GET request for file download
     if request.method == 'GET' and 'download' in request.GET:
         blob_name = request.GET.get('download')
-        
         # Ensure the file name is safe and matches the expected pattern
         expected_pattern = r'^reports/(registrations|enrollments)/[a-zA-Z0-9_\-]+\.csv$'
         if not re.match(expected_pattern, blob_name) or not is_safe_path(blob_name, 'reports/'):
             raise SuspiciousOperation('Invalid file path')
-
+        # Stream the file from GCS
         return download_gcs_file(bucket_name, blob_name, json_key_path)
-
     
     return render(request, 'reporting_download.html', context)

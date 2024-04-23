@@ -12,7 +12,9 @@
         <h2>Registration Reports</h2>
         <ul>
             {% for file in registration_files %}
-            <li><a href="https://storage.cloud.google.com/{{ bucket_name }}/{{ file }}" download>{{ file|basename }}</a></li>
+                <li>
+                    <a href="https://storage.cloud.google.com/{{ bucket_name }}/{{ file }}" download>{{ file|basename }}</a>
+                </li>
             {% endfor %}
         </ul>
         <form method="post" action="{% url 'gymnasium_reporting:reporting_download' %}">
@@ -24,7 +26,9 @@
         <h2>Enrollment Reports</h2>
         <ul>
             {% for file in enrollment_files %}
-            <li><a href="https://storage.cloud.google.com/{{ bucket_name }}/{{ file }}" download>{{ file|basename }}</a></li>
+                <li>
+                    <a href="https://storage.cloud.google.com/{{ bucket_name }}/{{ file }}" download>{{ file|basename }}</a>
+                </li>
             {% endfor %}
         </ul>
         <form method="post" action="{% url 'gymnasium_reporting:reporting_download' %}">
