@@ -12,7 +12,6 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f9f9f9;
             margin: 0;
-            padding: 20px;
             color: #333;
         }
         .container {
@@ -61,19 +60,20 @@
         }
         .column ul li a {
             text-decoration: none;
-            color: #3498db;
+            color: #ff5f14;
             background: #f7f7f7;
             display: block;
             padding: 10px;
             margin: 10px 0;
             border-radius: 4px;
+            font-size: 1.5rem;
         }
         .button-container {
             text-align: center;
             margin-top: 20px;
         }
         button {
-            background-color: #3498db;
+            background-color: #181818 !important;
             border: none;
             padding: 10px 20px;
             color: white;
@@ -83,59 +83,105 @@
             text-transform: uppercase;
             transition: background-color 0.3s ease;
         }
-        button:hover {
-            background-color: #2980b9;
+        .report-container {
+            margin-top: 80px;
+        }
+        .files-container {
+            padding: 10px;
         }
     </style>
 </head>
-<body class="container">
-    <nav id="main-nav" class="main-nav" aria-label="Main Navigation">
-        <div class="container">
-          <a class="site-logo" href="/">
-            <img class="gymnasium-logo" src="https://thegymcms.com/img/brand/png/gymnasium-logo-white-4x.png" srcset="https://thegymcms.com/img/brand/svg/gymnasium-logo-white.svg" width="200" height="23" alt="Aquent Gymnasium home page">
-          </a>
-          <ul class="logged-in" role="list">
-              <li><a href="/courses">Courses</a></li>
-              <li><a href="/jobs">Jobs</a></li>
-              <li class="vbar"><a href="/about">About</a></li>
-              <li class="active"><a href="/dashboard" aria-current="page">Dashboard</a></li>
-              <li><a href="/logout">Log Out</a></li>
-          </ul>
-        </div>
-    </nav>
-    <h1>Report Center </h1>
-    <p class="description">Access reports for user registrations and course enrollments. Generate fresh reports or download the existing ones.</p>
-    <div class="row">
-        <div class="column">
-            <h2>Registrations Report</h2>
-            <ul>
-                {% for file in registration_files %}
-                    <li>
-                        <a href="https://storage.cloud.google.com/{{ bucket_name }}/{{ file }}" download>{{ file|basename }}</a>
-                    </li>
-                {% endfor %}
+<body>
+    <header class="site-header" aria-label="Site Header">
+        <nav id="utility-nav" class="utility-nav" aria-label="Affiliated Brands Navigation">
+          <div class="container">
+            <ul class="list">
+              <li>
+                <a href="https://aquent.com" class="grayscale" rel="noopener" target="_blank" aria-label="Aquent website.">
+                  <img class="icon-aquent" alt="Aquent “A” logo." src="https://thegymcms.com/img/brand/png/aquent-a-logo-orange.png" srcset="https://thegymcms.com/img/brand/svg/aquent-a-logo-orange.svg" width="23" height="25" decoding="async" fetchpriority="high">
+                </a>
+              </li>
+              <li>
+                <a href="https://aquenttalent.com" class="grayscale opacity" rel="noopener" target="_blank" aria-label="Aquent Talent website.">
+                  <img class="icon-aquent-talent" alt="Aquent Talent “T” (inside a teardrop) logo." src="https://thegymcms.com/img/brand/png/aquent-talent-t-logo-white.png" srcset="https://thegymcms.com/img/brand/svg/aquent-talent-t-logo-white.svg" width="26" height="29" decoding="async" fetchpriority="high">
+                </a>
+              </li>
             </ul>
-            <div class="button-container">
-                <form method="post" action="{% url 'gymnasium_reporting:reporting_download' %}">
-                    {% csrf_token %}
-                    <button type="submit" name="generate_registration">Generate Registrations Report</button>
-                </form>
+          </div>
+        </nav>
+      
+        <nav id="main-nav" class="main-nav" aria-label="Main Navigation">
+          <div class="container">
+      
+            <a class="site-logo" href="/">
+            
+        <img class="gymnasium-logo" src="https://thegymcms.com/img/brand/png/gymnasium-logo-white-4x.png" srcset="https://thegymcms.com/img/brand/svg/gymnasium-logo-white.svg" width="200" height="23" alt="Aquent Gymnasium home page">
+      
+            </a>
+      
+              
+      
+            <ul class="logged-in" role="list">
+                <li><a href="/courses">Courses</a></li>
+                <li><a href="/jobs">Jobs</a></li>
+                <li class="vbar"><a href="/about">About</a></li>
+                
+                      <li><a href="/dashboard">Dashboard</a></li>
+                    <li><a href="/logout">Log Out</a></li>
+                
+            </ul>
+          </div>
+        </nav>
+      
+        <div class="wrapper-msg urgency-high" id="browserWarning" style="display:none;">
+          <div class="msg">
+            <div class="msg-content">
+              <h1>Improve your Gymnasium experience</h1>
+              <div class="copy">
+                <p>It looks like you’re using an unsupported browser. To get the most out of your Gymnasium experience, we recommend that you use
+                  <a href="https://www.google.com/chrome/index.html" target="_blank" rel="noopener">Chrome</a>,
+                  <a href="https://www.mozilla.org/en-US/firefox/new/" target="_blank" rel="noopener">Firefox</a>, or
+                  <a href="https://www.apple.com/safari/" target="_blank" rel="noopener">Safari</a>.</p>
+              </div>
             </div>
+          </div>
         </div>
-        <div class="column">
-            <h2>Enrollments Report</h2>
-            <ul>
-                {% for file in enrollment_files %}
-                    <li>
-                        <a href="https://storage.cloud.google.com/{{ bucket_name }}/{{ file }}" download>{{ file|basename }}</a>
-                    </li>
-                {% endfor %}
-            </ul>
-            <div class="button-container">
-                <form method="post" action="{% url 'gymnasium_reporting:reporting_download' %}">
-                    {% csrf_token %}
-                    <button type="submit" name="generate_enrollment">Generate Enrollments Report</button>
-                </form>
+    </header>
+    <div class="container report-container">
+        <h1>Report Center </h1>
+        <p class="description">Access reports for user registrations and course enrollments. Generate fresh reports or download the existing ones.</p>
+        <div class="row">
+            <div class="column">
+                <h2>Registrations Report</h2>
+                <ul class="files-container">
+                    {% for file in registration_files %}
+                        <li>
+                            <a href="https://storage.cloud.google.com/{{ bucket_name }}/{{ file }}" download>{{ file|basename }}</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+                <div class="button-container">
+                    <form method="post" action="{% url 'gymnasium_reporting:reporting_download' %}">
+                        {% csrf_token %}
+                        <button type="submit" name="generate_registration">Generate Registrations Report</button>
+                    </form>
+                </div>
+            </div>
+            <div class="column">
+                <h2>Enrollments Report</h2>
+                <ul>
+                    {% for file in enrollment_files %}
+                        <li>
+                            <a href="https://storage.cloud.google.com/{{ bucket_name }}/{{ file }}" download>{{ file|basename }}</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+                <div class="button-container">
+                    <form method="post" action="{% url 'gymnasium_reporting:reporting_download' %}">
+                        {% csrf_token %}
+                        <button type="submit" name="generate_enrollment">Generate Enrollments Report</button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
