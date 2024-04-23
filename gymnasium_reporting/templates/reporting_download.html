@@ -4,7 +4,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Report Downloads</title>
+    <title>Dashboard | Report Center</title>
+    <link rel="preload" fetchpriority="high" href="https://thegymcms.com/css/main.css" as="style">
     <style>
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -76,6 +77,20 @@
     </style>
 </head>
 <body class="container">
+    <nav id="main-nav" class="main-nav" aria-label="Main Navigation">
+        <div class="container">
+          <a class="site-logo" href="/">
+            <img class="gymnasium-logo" src="https://thegymcms.com/img/brand/png/gymnasium-logo-white-4x.png" srcset="https://thegymcms.com/img/brand/svg/gymnasium-logo-white.svg" width="200" height="23" alt="Aquent Gymnasium home page">
+          </a>
+          <ul class="logged-in" role="list">
+              <li><a href="/courses">Courses</a></li>
+              <li><a href="/jobs">Jobs</a></li>
+              <li class="vbar"><a href="/about">About</a></li>
+              <li class="active"><a href="/dashboard" aria-current="page">Dashboard</a></li>
+              <li><a href="/logout">Log Out</a></li>
+          </ul>
+        </div>
+    </nav>
     <h1>Report Downloads</h1>
     <div>
         <h2>Registration Reports</h2>
