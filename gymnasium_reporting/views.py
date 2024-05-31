@@ -1,6 +1,7 @@
 import io
 import re
 import csv
+import time
 import datetime
 from django.urls import reverse
 from django.shortcuts import render, redirect
@@ -92,15 +93,29 @@ def upload_to_gcs(bucket_name, destination_blob_name, content, json_key_path):
     blob.upload_from_string(content.getvalue(), content_type='text/csv')
     print("Content uploaded to {}.".format(destination_blob_name))
 
-def list_files(bucket_name, prefix, json_key_path, max_results=15):
+def list_files(bucket_name, prefix, json_key_path, max_results=7):
     """List files in a specific GCS bucket using a service account key."""
     # Create a storage client using the service account key
     storage_client = storage.Client.from_service_account_json(json_key_path)
     # Get the bucket
     bucket = storage_client.bucket(bucket_name)
     # List blobs in the specified bucket with the given prefix
-    blobs = bucket.list_blobs(prefix=prefix, max_results=max_results)
-    return [blob.name for blob in blobs]
+    blobs = bucket.list_blobs(prefix=prefix)
+    
+    # Extract filenames and sort by date (assuming date is in the filename)
+    files = [blob.name for blob in blobs]
+    
+    # Extract dates from filenames and sort by date
+    def extract_datetime_from_filename(filename):
+        match = re.search(r'_(\d{4}-\d{2}-\d{2}_\d{6})\.csv$', filename)
+        if match:
+            return datetime.datetime(*(time.strptime(match.group(1), '%Y-%m-%d_%H%M%S')[0:6]))
+        return datetime.datetime.min
+    
+    files.sort(key=extract_datetime_from_filename, reverse=True)
+    
+    # Return only the latest 7 files
+    return files[:max_results]
 
 def download_gcs_file(bucket_name, blob_name, json_key_path):
     """Streams a file from GCS to the user."""
