@@ -2,21 +2,21 @@ import io
 import re
 import csv
 import time
+import os
 import datetime
 from django.urls import reverse
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
-from django.http import StreamingHttpResponse, HttpResponseRedirect
+from django.http import FileResponse, HttpResponseRedirect
 from django.db.models import OuterRef, Subquery, F
 from django.core.exceptions import SuspiciousOperation
-from django.core.exceptions import SuspiciousOperation
+from django.conf import settings
 
-from student.models import CourseEnrollment
+from common.djangoapps.student.models import CourseEnrollment
 from lms.djangoapps.certificates.models import GeneratedCertificate
 from openedx.core.djangoapps.content.course_overviews.models import CourseOverview
 from openedx.core.djangoapps.user_api.accounts.image_helpers import get_profile_image_urls_for_user
-from google.cloud import storage
 
 MARKET_MAPPING = {
     10: "Not Applicable",
@@ -85,27 +85,20 @@ def encode_for_csv(data):
     """
     return [s.encode('utf-8') if isinstance(s, unicode) else s for s in data]
 
-def upload_to_gcs(bucket_name, destination_blob_name, content, json_key_path):
-    """Uploads content to the bucket."""
-    storage_client = storage.Client.from_service_account_json(json_key_path)
-    bucket = storage_client.bucket(bucket_name)
-    blob = bucket.blob(destination_blob_name)
-    blob.upload_from_string(content.getvalue(), content_type='text/csv')
-    print("Content uploaded to {}.".format(destination_blob_name))
+def save_locally(filename, content):
+    """Saves content to a local file."""
+    reports_dir = os.path.join(settings.MEDIA_ROOT, 'reports')
+    os.makedirs(reports_dir, exist_ok=True)
+    file_path = os.path.join(reports_dir, filename)
+    with open(file_path, 'wb') as f:
+        f.write(content.getvalue())
+    print(f"Content saved to {file_path}")
 
-def list_files(bucket_name, prefix, json_key_path, max_results=7):
-    """List files in a specific GCS bucket using a service account key."""
-    # Create a storage client using the service account key
-    storage_client = storage.Client.from_service_account_json(json_key_path)
-    # Get the bucket
-    bucket = storage_client.bucket(bucket_name)
-    # List blobs in the specified bucket with the given prefix
-    blobs = bucket.list_blobs(prefix=prefix)
+def list_files(prefix, max_results=7):
+    """List files in the local reports directory."""
+    reports_dir = os.path.join(settings.MEDIA_ROOT, 'reports', prefix)
+    files = [f for f in os.listdir(reports_dir) if os.path.isfile(os.path.join(reports_dir, f))]
     
-    # Extract filenames and sort by date (assuming date is in the filename)
-    files = [blob.name for blob in blobs]
-    
-    # Extract dates from filenames and sort by date
     def extract_datetime_from_filename(filename):
         match = re.search(r'_(\d{4}-\d{2}-\d{2}_\d{6})\.csv$', filename)
         if match:
@@ -113,26 +106,13 @@ def list_files(bucket_name, prefix, json_key_path, max_results=7):
         return datetime.datetime.min
     
     files.sort(key=extract_datetime_from_filename, reverse=True)
-    
-    # Return only the latest 7 files
-    return files[:max_results]
-
-def download_gcs_file(bucket_name, blob_name, json_key_path):
-    """Streams a file from GCS to the user."""
-    storage_client = storage.Client.from_service_account_json(json_key_path)
-    bucket = storage_client.bucket(bucket_name)
-    blob = bucket.blob(blob_name)
-    
-    response = StreamingHttpResponse(blob.download_as_string())
-    response['Content-Disposition'] = 'attachment; filename="{}"'.format(os.path.basename(blob_name))
-    return response
+    return [os.path.join(prefix, f) for f in files[:max_results]]
 
 def generate_registration_report_csv():
     users = User.objects.select_related('profile', 'extrainfo').all()
     current_datetime = datetime.datetime.now().strftime('%Y-%m-%d_%H%M%S')
     filename = 'registration_report_{}.csv'.format(current_datetime)
-    destination_blob_name = 'reports/registrations/{}'.format(filename)
-    # Using BytesIO to write CSV content in-memory
+    destination_path = os.path.join('registrations', filename)
     content = io.BytesIO()
     writer = csv.writer(content)
     writer.writerow(['ID', 'Username', 'Email', 'Full Name', 'Date Joined', 'Market'])
@@ -155,13 +135,9 @@ def generate_registration_report_csv():
             market,
         ]
         writer.writerow(encode_for_csv(user_data))
-    # Reset the cursor of the content
     content.seek(0)
-    # Now upload the content to GCS
-    json_key_path = '/etc/gcp/service_key.json'
-    bucket_name = 'prod-hawthorn-gymnasium-backups'
-    upload_to_gcs(bucket_name, destination_blob_name, content, json_key_path)
-    print('Registration report generated and uploaded.')
+    save_locally(destination_path, content)
+    print('Registration report generated and saved locally.')
 
 def generate_enrollment_report_csv():
     enrollments = CourseEnrollment.objects.filter(is_active=True).select_related(
@@ -184,8 +160,7 @@ def generate_enrollment_report_csv():
     )
     current_datetime = datetime.datetime.now().strftime('%Y-%m-%d_%H%M%S')
     filename = 'enrollment_report_{}.csv'.format(current_datetime)
-    destination_blob_name = 'reports/enrollments/{}'.format(filename)
-    # Using BytesIO to hold CSV content in memory
+    destination_path = os.path.join('enrollments', filename)
     content = io.BytesIO()
     writer = csv.writer(content)
     writer.writerow(['Course ID', 'Course Name', 'User ID', 'Username', 'Email', 'Full Name', 'Enrollment Date', 'Final Score', 'Completion Date'])
@@ -198,39 +173,33 @@ def generate_enrollment_report_csv():
             enrollment['user_id'],
             enrollment['user__username'],
             enrollment['user__email'],
-            enrollment.get('user__profile__name', 'N/A'),  # Assuming profile name might be missing
+            enrollment.get('user__profile__name', 'N/A'),
             enrollment_date,
-            enrollment.get('grade', 'N/A'),  # Assuming grade might be missing
+            enrollment.get('grade', 'N/A'),
             completion_date,
         ]))
-    # Reset the content cursor to the beginning
     content.seek(0)
-    # Upload the content to GCS
-    json_key_path = '/etc/gcp/service_key.json'  # Ensure correct path
-    bucket_name = 'prod-hawthorn-gymnasium-backups'
-    upload_to_gcs(bucket_name, destination_blob_name, content, json_key_path)
-    print('Enrollment report generated and uploaded.')
+    save_locally(destination_path, content)
+    print('Enrollment report generated and saved locally.')
 
-def is_safe_path(blob_name, path_prefix):
+def is_safe_path(file_path, base_dir):
     # Check if the path is safe to use
-    return blob_name.startswith(path_prefix) and '..' not in blob_name and '\x00' not in blob_name
+    return os.path.abspath(file_path).startswith(base_dir) and '..' not in file_path and '\x00' not in file_path
 
 @login_required
 def reporting_download(request):
     if not request.user.is_superuser:
         return redirect('/')
 
-    json_key_path = '/etc/gcp/service_key.json'
-    bucket_name = 'prod-hawthorn-gymnasium-backups'
-    registrations_prefix = 'reports/registrations/'
-    enrollments_prefix = 'reports/enrollments/'
+    reports_dir = os.path.join(settings.MEDIA_ROOT, 'reports')
+    registrations_prefix = 'registrations'
+    enrollments_prefix = 'enrollments'
     
-    # Fetch the latest 15 registration and enrollment reports
-    registration_files = list_files(bucket_name, registrations_prefix, json_key_path)
-    enrollment_files = list_files(bucket_name, enrollments_prefix, json_key_path)
+    # Fetch the latest 7 registration and enrollment reports
+    registration_files = list_files(registrations_prefix)
+    enrollment_files = list_files(enrollments_prefix)
 
     context = {
-        'bucket_name': bucket_name,
         'registration_files': registration_files,
         'enrollment_files': enrollment_files,
     }
@@ -239,21 +208,16 @@ def reporting_download(request):
     if request.method == 'POST':
         if 'generate_registration' in request.POST:
             generate_registration_report_csv()
-            # Redirect to avoid re-posting on refresh
-            return HttpResponseRedirect(reverse('gymnasium_reporting:reporting_download'))
         elif 'generate_enrollment' in request.POST:
             generate_enrollment_report_csv()
-            # Redirect to avoid re-posting on refresh
-            return HttpResponseRedirect(reverse('gymnasium_reporting:reporting_download'))
+        return HttpResponseRedirect(reverse('gymnasium_reporting:reporting_download'))
 
     # Handle GET request for file download
     if request.method == 'GET' and 'download' in request.GET:
-        blob_name = request.GET.get('download')
-        # Ensure the file name is safe and matches the expected pattern
-        expected_pattern = r'^reports/(registrations|enrollments)/[a-zA-Z0-9_\-]+\.csv$'
-        if not re.match(expected_pattern, blob_name) or not is_safe_path(blob_name, 'reports/'):
+        file_path = request.GET.get('download')
+        full_path = os.path.join(reports_dir, file_path)
+        if not is_safe_path(full_path, reports_dir):
             raise SuspiciousOperation('Invalid file path')
-        # Stream the file from GCS
-        return download_gcs_file(bucket_name, blob_name, json_key_path)
+        return FileResponse(open(full_path, 'rb'), as_attachment=True, filename=os.path.basename(file_path))
     
     return render(request, 'reporting_download.html', context)
