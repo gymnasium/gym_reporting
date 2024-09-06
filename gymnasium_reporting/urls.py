@@ -1,6 +1,6 @@
-from django.conf.urls import url
+from django.urls import path
 from . import views
 
 urlpatterns = [
-    url(r'^reporting/download$', views.reporting_download, name='reporting_download'),
+    path('reporting/download/', views.reporting_download, name='reporting_download'),
 ]
