@@ -83,18 +83,12 @@ def ensure_dir_exists(directory):
     """Ensure that a directory exists, creating it if necessary."""
     os.makedirs(directory, exist_ok=True)
 
-def encode_for_csv(data):
-    """
-    Encodes all strings in a list for CSV output, ensuring Unicode strings are properly handled.
-    """
-    return [s.encode('utf-8') if isinstance(s, unicode) else s for s in data]
-
 def save_locally(filename, content):
     """Saves content to a local file."""
     reports_dir = os.path.join(settings.MEDIA_ROOT, 'reports')
     ensure_dir_exists(reports_dir)
     file_path = os.path.join(reports_dir, filename)
-    with open(file_path, 'wb') as f:
+    with open(file_path, 'w', newline='', encoding='utf-8') as f:  # Change to text mode
         f.write(content.getvalue())
     print(f"Content saved to {file_path}")
 
@@ -113,14 +107,16 @@ def list_files(prefix, max_results=7):
     files.sort(key=extract_datetime_from_filename, reverse=True)
     return [os.path.join(prefix, f) for f in files[:max_results]]
 
+from io import StringIO  # Change this import
+
 def generate_registration_report_csv():
     users = User.objects.select_related('profile', 'extrainfo').all()
     current_datetime = datetime.datetime.now().strftime('%Y-%m-%d_%H%M%S')
     filename = 'registration_report_{}.csv'.format(current_datetime)
     destination_path = os.path.join('registrations', filename)
-    content = io.BytesIO()
+    content = StringIO()  # Change to StringIO
     writer = csv.writer(content)
-    writer.writerow(['ID', 'Username', 'Email', 'Full Name', 'Date Joined', 'Market'])
+    writer.writerow(['ID', 'Username', 'Email', 'Full Name', 'Date Joined', 'Market'])  # Remove encoding
     for user in users:
         try:
             fullname = user.profile.name
@@ -132,14 +128,14 @@ def generate_registration_report_csv():
         except AttributeError:
             market = 'N/A'
         user_data = [
-            user.id,
+            str(user.id),
             user.username,
             user.email,
             fullname,
             user.date_joined.strftime('%Y-%m-%d'),
             market,
         ]
-        writer.writerow(encode_for_csv(user_data))
+        writer.writerow(user_data)
     content.seek(0)
     save_locally(destination_path, content)
     print('Registration report generated and saved locally.')
@@ -166,23 +162,23 @@ def generate_enrollment_report_csv():
     current_datetime = datetime.datetime.now().strftime('%Y-%m-%d_%H%M%S')
     filename = 'enrollment_report_{}.csv'.format(current_datetime)
     destination_path = os.path.join('enrollments', filename)
-    content = io.BytesIO()
+    content = StringIO()  # Change to StringIO
     writer = csv.writer(content)
-    writer.writerow(['Course ID', 'Course Name', 'User ID', 'Username', 'Email', 'Full Name', 'Enrollment Date', 'Final Score', 'Completion Date'])
+    writer.writerow(['Course ID', 'Course Name', 'User ID', 'Username', 'Email', 'Full Name', 'Enrollment Date', 'Final Score', 'Completion Date'])  # Remove encoding
     for enrollment in enrollments:
         enrollment_date = enrollment['created'].strftime('%Y-%m-%d') if enrollment['created'] else ''
         completion_date = enrollment['completion_date'].strftime('%Y-%m-%d') if enrollment.get('completion_date') else ''
-        writer.writerow(encode_for_csv([
-            enrollment['course_id'],
+        writer.writerow([
+            str(enrollment['course_id']),
             enrollment['course__display_name'],
-            enrollment['user_id'],
+            str(enrollment['user_id']),
             enrollment['user__username'],
             enrollment['user__email'],
             enrollment.get('user__profile__name', 'N/A'),
             enrollment_date,
-            enrollment.get('grade', 'N/A'),
+            str(enrollment.get('grade', 'N/A')),
             completion_date,
-        ]))
+        ])
     content.seek(0)
     save_locally(destination_path, content)
     print('Enrollment report generated and saved locally.')
