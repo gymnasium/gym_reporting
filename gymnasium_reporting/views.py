@@ -79,6 +79,10 @@ MARKET_MAPPING = {
     881: "USA - Wisconsin",
 }
 
+def ensure_dir_exists(directory):
+    """Ensure that a directory exists, creating it if necessary."""
+    os.makedirs(directory, exist_ok=True)
+
 def encode_for_csv(data):
     """
     Encodes all strings in a list for CSV output, ensuring Unicode strings are properly handled.
@@ -88,7 +92,7 @@ def encode_for_csv(data):
 def save_locally(filename, content):
     """Saves content to a local file."""
     reports_dir = os.path.join(settings.MEDIA_ROOT, 'reports')
-    os.makedirs(reports_dir, exist_ok=True)
+    ensure_dir_exists(reports_dir)
     file_path = os.path.join(reports_dir, filename)
     with open(file_path, 'wb') as f:
         f.write(content.getvalue())
@@ -97,6 +101,7 @@ def save_locally(filename, content):
 def list_files(prefix, max_results=7):
     """List files in the local reports directory."""
     reports_dir = os.path.join(settings.MEDIA_ROOT, 'reports', prefix)
+    ensure_dir_exists(reports_dir)
     files = [f for f in os.listdir(reports_dir) if os.path.isfile(os.path.join(reports_dir, f))]
     
     def extract_datetime_from_filename(filename):
@@ -194,6 +199,10 @@ def reporting_download(request):
     reports_dir = os.path.join(settings.MEDIA_ROOT, 'reports')
     registrations_prefix = 'registrations'
     enrollments_prefix = 'enrollments'
+    
+    # Ensure directories exist
+    ensure_dir_exists(os.path.join(reports_dir, registrations_prefix))
+    ensure_dir_exists(os.path.join(reports_dir, enrollments_prefix))
     
     # Fetch the latest 7 registration and enrollment reports
     registration_files = list_files(registrations_prefix)
