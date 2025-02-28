@@ -22,7 +22,7 @@ Activate Open edX environment variable and install the repo
 sudo su edxapp -s /bin/bash
 source /edx/app/edxapp/edxapp_env
 cd /edx/app/edxapp/edx-platform/
-pip install -e git+https://github.com/gymnasium/gym_reporting@main#egg=gymnasium-reporting
+pip install -e git+https://github.com/gymnasium/gym_reporting@main#egg=gymnasium_reporting
 ```
 
 ## Usage
