@@ -1,7 +1,7 @@
 # Gymnasium Reporting Plugin
 
 ## Introduction
-This repository contains a plugin for Open edX that adds a new URL to the platform `/reporting/download` to provide registrations and enrollments reports. The URL is only accessible to superusers of the platofmr and when the user is not authenticated and not superuser they shouldn't see this page.
+This repository contains a plugin for Open edX that adds a new URL to the platform `/reporting/download/` to provide registrations and enrollments reports. The URL is only accessible to superusers of the platofmr and when the user is not authenticated and not superuser they shouldn't see this page.
 
 
 ## Features
@@ -26,7 +26,7 @@ pip install -e git+https://github.com/gymnasium/gym_reporting@main#egg=gymnasium
 ```
 
 ## Usage
-1. Navigate to `/reporting/downloads` in your Open edX LMS.
+1. Navigate to `/reporting/download/` in your Open edX LMS.
 2. Use the "Generate New Registration Report" and "Generate New Enrollment Report" buttons to create reports.
 3. Download the latest reports from the displayed list.
 
