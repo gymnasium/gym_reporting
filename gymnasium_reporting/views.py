@@ -19,7 +19,7 @@ from openedx.core.djangoapps.content.course_overviews.models import CourseOvervi
 from openedx.core.djangoapps.user_api.accounts.image_helpers import get_profile_image_urls_for_user
 
 MARKET_MAPPING = {
-    10: "Not Applicable",
+    "NA": "Not Applicable",
     36: "Australia - Melbourne",
     39: "Australia - Sydney",
     40: "Canada - Toronto",
@@ -121,12 +121,12 @@ def generate_registration_report_csv():
         try:
             fullname = user.profile.name
         except AttributeError:
-            fullname = 'N/A'
+            fullname = 'NA'
         try:
             market_number = user.extrainfo.market
             market = MARKET_MAPPING.get(int(market_number), 'Unknown Market')
         except AttributeError:
-            market = 'N/A'
+            market = 'NA'
         user_data = [
             str(user.id),
             user.username,
@@ -174,9 +174,9 @@ def generate_enrollment_report_csv():
             str(enrollment['user_id']),
             enrollment['user__username'],
             enrollment['user__email'],
-            enrollment.get('user__profile__name', 'N/A'),
+            enrollment.get('user__profile__name', 'NA'),
             enrollment_date,
-            str(enrollment.get('grade', 'N/A')),
+            str(enrollment.get('grade', 'NA')),
             completion_date,
         ])
     content.seek(0)
