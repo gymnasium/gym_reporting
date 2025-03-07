@@ -13,6 +13,7 @@
     <link rel="dns-prefetch" href="{% get_setting "ROOT_URL" %}" />
     <link rel="preload" fetchpriority="high" href="{% get_setting "STATIC_ASSETS_URL" %}/css/global.css" as="style" />
     <link rel="stylesheet" href="{% get_setting "STATIC_ASSETS_URL" %}/css/global.css" type="text/css" media="all" />
+    <link rel="icon" href="{% get_setting "STATIC_ASSETS_URL" %}/favicon.ico" sizes="any">
     <style>
       main {
         min-height: 80vh;
@@ -137,7 +138,7 @@
     <footer class="site-footer" role="contentinfo">
       <div class="container">
         <p class="copyright">
-          <small>© {% now "Y" %} <a href="{% get_setting "ROOT_URL" %}/" aria-label="Gymnasium homepage">Aquent Gymnasium</a></small>
+          <small>© {% now "Y" %} <a href="/" aria-label="Gymnasium homepage">Aquent Gymnasium</a></small>
         </p>
       </div>
     </footer>
