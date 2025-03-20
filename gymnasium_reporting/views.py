@@ -4,6 +4,7 @@ import csv
 import time
 import os
 import datetime
+import logging
 from django.urls import reverse
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
@@ -18,65 +19,67 @@ from lms.djangoapps.certificates.models import GeneratedCertificate
 from openedx.core.djangoapps.content.course_overviews.models import CourseOverview
 from openedx.core.djangoapps.user_api.accounts.image_helpers import get_profile_image_urls_for_user
 
+LOGGER = logging.getLogger(__name__)
+
 MARKET_MAPPING = {
     "NA": "Not Applicable",
-    36: "Australia - Melbourne",
-    39: "Australia - Sydney",
-    40: "Canada - Toronto",
-    47: "Canada - Vancouver",
-    35: "France - Paris",
+    36: "Melbourne",
+    39: "Sydney",
+    40: "Toronto",
+    47: "Vancouver",
+    35: "Paris",
     115: "Germany",
-    92: "Japan - Fukuoka",
-    64: "Japan - Osaka",
-    79: "Japan - Nagoya",
-    44: "Japan - Tokyo",
-    43: "Netherlands - Amsterdam",
-    29: "UK - London",
-    120: "USA - Alabama",
-    122: "USA - Arkansas",
-    23: "USA - Atlanta",
-    60: "USA - Austin",
-    46: "USA - Baltimore",
-    102: "USA - Boise",
-    10: "USA - Boston",
-    61: "USA - Charlotte",
-    14: "USA - Chicago",
-    34: "USA - Connecticut",
-    22: "USA - Dallas",
-    27: "USA - Denver",
-    24: "USA - Detroit",
-    826: "USA - Houston",
-    58: "USA - Indianapolis",
-    116: "USA - Kentucky",
-    13: "USA - Los Angeles",
-    117: "USA - Louisiana",
-    33: "USA - Miami",
-    20: "USA - Minneapolis",
-    118: "USA - Mississippi",
-    807: "USA - Moline",
-    30: "USA - New Jersey",
-    11: "USA - New York City",
-    51: "USA - Northern Virginia",
-    32: "USA - Ohio",
-    119: "USA - Oklahoma",
-    19: "USA - Orange County",
-    72: "USA - Orlando",
-    121: "USA - Pensacola, FL",
-    18: "USA - Philadelphia",
-    31: "USA - Phoenix",
-    41: "USA - Portland, OR",
-    73: "USA - Providence",
-    803: "USA - Raleigh/Durham",
-    78: "USA - Richmond",
-    16: "USA - San Diego",
-    12: "USA - San Francisco",
-    17: "USA - Seattle",
-    15: "USA - Silicon Valley",
-    37: "USA - St. Louis",
-    68: "USA - Tampa",
-    63: "USA - Tennessee",
-    25: "USA - Washington, DC",
-    881: "USA - Wisconsin",
+    92: "Fukuoka",
+    64: "Osaka",
+    79: "Nagoya",
+    44: "Tokyo",
+    43: "Amsterdam",
+    29: "London",
+    120: "Alabama",
+    122: "Arkansas",
+    23: "Atlanta",
+    60: "Austin",
+    46: "Baltimore",
+    102: "Boise",
+    10: "Boston",
+    61: "Charlotte",
+    14: "Chicago",
+    34: "Connecticut",
+    22: "Dallas",
+    27: "Denver",
+    24: "Detroit",
+    826: "Houston",
+    58: "Indianapolis",
+    116: "Kentucky",
+    13: "Los Angeles",
+    117: "Louisiana",
+    33: "Miami",
+    20: "Minneapolis",
+    118: "Mississippi",
+    807: "Moline",
+    30: "New Jersey",
+    11: "New York City",
+    51: "Northern Virginia",
+    32: "Ohio",
+    119: "Oklahoma",
+    19: "Orange County",
+    72: "Orlando",
+    121: "Pensacola, FL",
+    18: "Philadelphia",
+    31: "Phoenix",
+    41: "Portland, OR",
+    73: "Providence",
+    803: "Raleigh/Durham",
+    78: "Richmond",
+    16: "San Diego",
+    12: "San Francisco",
+    17: "Seattle",
+    15: "Silicon Valley",
+    37: "St. Louis",
+    68: "Tampa",
+    63: "Tennessee",
+    25: "Washington, DC",
+    881: "Wisconsin",
 }
 
 def ensure_dir_exists(directory):
@@ -90,7 +93,7 @@ def save_locally(filename, content):
     file_path = os.path.join(reports_dir, filename)
     with open(file_path, 'w', newline='', encoding='utf-8') as f:  # Change to text mode
         f.write(content.getvalue())
-    print(f"Content saved to {file_path}")
+    LOGGER.info(f"Content saved to {file_path}")
 
 def list_files(prefix, max_results=7):
     """List files in the local reports directory."""
@@ -116,24 +119,49 @@ def generate_registration_report_csv():
     destination_path = os.path.join('registrations', filename)
     content = StringIO()  # Change to StringIO
     writer = csv.writer(content)
-    writer.writerow(['ID', 'Username', 'Email', 'Full Name', 'Date Joined', 'Market'])  # Remove encoding
+    writer.writerow(['ID', 'Username', 'Email', 'Full Name', 'Date Joined', 'Market ID', 'Market Name', 'Country'])  # Remove encoding
     for user in users:
+        # set initial defaults
+        country = '(not set)'
+        fullname = '(not set)'
+        market_id = '(not set)'
+        market_name = market_id
         try:
-            fullname = user.profile.name
-        except AttributeError:
-            fullname = 'NA'
+            if hasattr(user, 'profile'):
+                if hasattr(user.profile, 'name') and user.profile.name != '':
+                    try:
+                        fullname = user.profile.name
+                    except (AttributeError, KeyError) as e:
+                        LOGGER.exception(e)
+                if hasattr(user.profile, 'country') and user.profile.country != '':
+                    try:
+                        country = user.profile.country
+                    except (AttributeError, KeyError) as e:
+                        LOGGER.exception(e)
+            if hasattr(user, 'extrainfo'):
+                if hasattr(user.extrainfo, 'market') and user.extrainfo.market != '':
+                    try:
+                        market_id = user.extrainfo.market
+                    except (AttributeError, KeyError) as e:
+                        LOGGER.exception(e)
+        except (AttributeError, KeyError) as e:
+            LOGGER.exception(e)
         try:
-            market_number = user.extrainfo.market
-            market = MARKET_MAPPING.get(int(market_number), 'Unknown Market')
-        except AttributeError:
-            market = 'NA'
+            if market_id == 'NA' or market_id == '(not set)':
+                market_name = market_id
+            else:
+                market_name = MARKET_MAPPING.get(int(market_id), '(unknown market)')
+        except (AttributeError, KeyError, TypeError) as e:
+            LOGGER.exception(e)
         user_data = [
             str(user.id),
             user.username,
             user.email,
             fullname,
             user.date_joined.strftime('%Y-%m-%d'),
-            market,
+            market_id,
+            market_name,
+            country,
         ]
         writer.writerow(user_data)
     content.seek(0)
